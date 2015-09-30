@@ -1,6 +1,6 @@
 import Cycle from '@cycle/core';
 import CycleDOM from '@cycle/dom';
-import styles from './app.css'
+import styles from './app.css';
 
 function main() {
 	return {
