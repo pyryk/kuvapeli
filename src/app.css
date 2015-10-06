@@ -7,4 +7,14 @@
 	.question {
 		
 	}
+
+	.answer-correct-status {
+		&.good {
+			color: green;
+		}
+
+		&.bad {
+			color: red;
+		}
+	}
 }

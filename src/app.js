@@ -25,22 +25,18 @@ const images = _.shuffle([
 		url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Sunflower_sky_backdrop.jpg/1024px-Sunflower_sky_backdrop.jpg',
 		answer: 'auringonkukka'
 	}
-
-let value;
 ]);
 
 function main({DOM}) {
 	let inputValue$ = DOM.select('#answer').events('input')
 		.map(ev => { console.log('inputValue$'); return ev.target.value; })
 		.startWith('')
-		.map(v => { value = v; return v; });
+		.map(v => { return v; });
 
 	let submit$ = DOM.select('#answer').events('keypress')
 		.map(ev => ev.keyCode)
-		.filter(code => {
-			console.log('submit', code);
-			return code === 13;
-		});
+		.filter(code => code === 13)
+		.withLatestFrom(inputValue$, (code, value) => value);
 
 	let image$ = submit$
 		.do(debug('afterSubmit'))
@@ -51,37 +47,42 @@ function main({DOM}) {
 		.map(count => images[count % images.length])
 		.do(debug('afterMapImage'))
 
-		//.scan((prev, current) => { console.log('scan', prev, current); return prev; })
-		//.do(debug('afterScan'))
-
-		.filter(image => {
-			console.log(image && image.answer, value);
-			return !image || image.answer === value; // TODO toLowerCase trim
-		})
 		.do(debug('afterFilter'))
 
 		.map(image => images[(images.indexOf(image) + 1) % images.length])
 		.do(debug('afterMapToNext'))
 
 		.startWith(images[0]);
+
+	let previousImage$ = image$
+		.pairwise()
+		.map(([previous]) => previous);
+
+	let correctAnswer$ = submit$
+		.withLatestFrom(
+			previousImage$,
+			(value, image) => image.answer === value
+		).startWith(false);
 	
 	let state$ = Cycle.Rx.Observable.combineLatest(
 		inputValue$,
-		image$
-	).map(([value, image]) => {
-			return {value, image};
-		});
+		image$,
+		correctAnswer$
+	).map(([value, image, correct]) => {
+			return {value, image, correct};
+	});
 
 	return {
-		DOM: state$.map(({value, image}) => {
-			console.log('render', {value, image});
+		DOM: state$.map((props) => {
+			console.log('render', props);
 			return h2('div.app', [
 				h('div', [
-					h2('img.question-image', {src: image.url})
+					h2('img.question-image', {src: props.image.url})
 				]),
 				h('div', [
 					h2('h2.question', ['Mikä on kuvassa?']),
-					h('input#answer', {value})
+					h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, [props.correct ? 'Oikein!' : 'Väärin!']),
+					h2('input#answer', {value: props.value})
 				])
 			]);
 		})
