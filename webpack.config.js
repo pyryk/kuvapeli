@@ -2,6 +2,9 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var path = require("path");
 
 module.exports = {
+    cache: true,
+    debug: true,
+    devtool: 'source-map',
     entry: {
         app: ["./src/app.js"]
     },
@@ -21,7 +24,8 @@ module.exports = {
     },
     postcss: [
         require('autoprefixer'),
-        require('postcss-color-rebeccapurple')
+        require('postcss-color-rebeccapurple'),
+        require('postcss-nested')
     ],
     plugins: [
         new ExtractTextPlugin('style.css', { allChunks: true })
