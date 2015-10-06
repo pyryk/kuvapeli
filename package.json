@@ -2,6 +2,7 @@
   "name": "kuvapeli",
   "version": "1.0.0",
   "description": "Kuvapeli",
+  "repository": "https://github.com/pyryk/kuvapeli",
   "main": "index.js",
   "scripts": {
     "test": "webpack",
