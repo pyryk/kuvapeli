@@ -4,17 +4,10 @@ import styles from './app.css';
 import _ from 'lodash';
 
 function h2(selector, ...args) {
-	let element, id, separator;
-	if (selector.indexOf('#') > -1) {
-		[element, id] = selector.split('#');
-		separator = '#';
-	} else if (selector.indexOf('.') > -1) {
-		[element, id] = selector.split('.');
-		separator = '.';
-	}
+	let [element, ...ids] = selector.split('.');
 	
 
-	return h.apply(h, [element + separator + styles[id]].concat(args));
+	return h.apply(h, [element + ids.map(id => '.' + styles[id])].concat(args));
 }
 
 const debug = (label) => (...args) => console.log.apply(console, [label].concat(args));
