@@ -1,6 +1,7 @@
 import Cycle from '@cycle/core';
 import {h, makeDOMDriver} from '@cycle/dom';
 import styles from './app.css';
+import _ from 'lodash';
 
 function h2(selector, ...args) {
 	let element, id, separator;
@@ -18,7 +19,7 @@ function h2(selector, ...args) {
 
 const debug = (label) => (...args) => console.log.apply(console, [label].concat(args));
 
-const images = [
+const images = _.shuffle([
 	{
 		url: 'http://pkroger.org/pkro-futu-mv.jpg',
 		answer: 'pyry'
@@ -31,9 +32,9 @@ const images = [
 		url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Sunflower_sky_backdrop.jpg/1024px-Sunflower_sky_backdrop.jpg',
 		answer: 'auringonkukka'
 	}
-];
 
 let value;
+]);
 
 function main({DOM}) {
 	let inputValue$ = DOM.select('#answer').events('input')
