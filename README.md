@@ -14,4 +14,4 @@ Only dev mode available.
 
 # License
 
-MIT. For more detailed information, see <LICENSE.md>
+MIT. For more detailed information, see [LICENSE.md](LICENSE.md)
