@@ -62,7 +62,7 @@ function main({DOM}) {
 		.withLatestFrom(
 			previousImage$,
 			(value, image) => image.answer === value
-		).startWith(false);
+		).startWith(undefined);
 	
 	let state$ = Cycle.Rx.Observable.combineLatest(
 		inputValue$,
@@ -81,7 +81,10 @@ function main({DOM}) {
 				]),
 				h('div', [
 					h2('h2.question', ['Mikä on kuvassa?']),
-					h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, [props.correct ? 'Oikein!' : 'Väärin!']),
+					props.correct !== undefined ?
+						h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
+							[props.correct ? 'Oikein!' : 'Väärin!']) :
+						undefined,
 					h2('input#answer', {value: props.value})
 				])
 			]);
