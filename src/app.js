@@ -2,6 +2,7 @@ import Cycle from '@cycle/core';
 import {h, makeDOMDriver} from '@cycle/dom';
 import styles from './app.css';
 import _ from 'lodash';
+import {tabs} from './tabs';
 
 function h2(selector, ...args) {
 	let [element, ...ids] = selector.split('.');
@@ -69,30 +70,39 @@ function main({DOM}) {
 		image$,
 		correctAnswer$
 	).map(([value, image, correct]) => {
-			return {value, image, correct};
+		return {value, image, correct};
 	});
 
-	return {
-		DOM: state$.map((props) => {
-			console.log('render', props);
-			return h2('div.app', [
+	function tabChildren(props) {
+		return [
+			h('div', [
 				h('div', [
 					h2('img.question-image', {src: props.image.url})
 				]),
-				h('div', [
-					h2('h2.question', ['Mikä on kuvassa?']),
-					props.correct !== undefined ?
-						h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
-							[props.correct ? 'Oikein!' : 'Väärin!']) :
-						undefined,
-					h2('input#answer', {value: props.value})
-				])
+				h2('h2.question', ['Mikä on kuvassa?']),
+				props.correct !== undefined ?
+					h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
+						[props.correct ? 'Oikein!' : 'Väärin!']) :
+					undefined,
+				h2('input#answer', {value: props.value})
+			]),
+			h('div', ['this should eventually have setup'])
+		];
+	}
+
+	let tabProps$ = state$.map(props => ({default: 'tab1', children: tabChildren(props)}));
+	let tabPanel = tabs({DOM, props$: tabProps$});
+
+	return {
+		DOM: state$.combineLatest(tabPanel.DOM, (props, tabsVTree) => {
+			return h2('div.app', [
+				tabsVTree
 			]);
 		})
 	};
 }
 
-var drivers = {
+const drivers = {
 	DOM: makeDOMDriver('#app')
 };
 
