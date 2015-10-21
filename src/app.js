@@ -3,6 +3,7 @@ import {h, makeDOMDriver} from '@cycle/dom';
 import styles from './app.css';
 import _ from 'lodash';
 import {tabs} from './tabs';
+import {setup} from './setup';
 
 function h2(selector, ...args) {
 	let [element, ...ids] = selector.split('.');
@@ -73,7 +74,8 @@ function main({DOM}) {
 		return {value, image, correct};
 	});
 
-	function tabChildren(props) {
+	// TODO extract actual game
+	function tabChildren(props, setup) {
 		return [
 			h('div', [
 				h('div', [
@@ -86,11 +88,14 @@ function main({DOM}) {
 					undefined,
 				h2('input#answer', {value: props.value})
 			]),
-			h('div', ['this should eventually have setup'])
+			h('div', [
+				setup
+			])
 		];
 	}
 
-	let tabProps$ = state$.map(props => ({default: 'tab1', children: tabChildren(props)}));
+	let setupPanel = setup({DOM, props$: Cycle.Rx.Observable.just({label: 'Height', unit: 'cm', min: 140, initial: 170, max: 210})}, '.height');
+	let tabProps$ = state$.combineLatest(setupPanel.DOM, (props, setupVTree) => ({default: 'tab1', children: tabChildren(props, setupVTree)}));
 	let tabPanel = tabs({DOM, props$: tabProps$});
 
 	return {
