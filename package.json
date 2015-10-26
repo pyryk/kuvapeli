@@ -8,7 +8,10 @@
     "test": "webpack",
     "start": "webpack-dev-server",
     "clean": "rm -rf bin/*",
-    "build": "npm run clean && webpack"
+    "build": "npm run clean && webpack",
+    "predeploy": "npm run build && mkdir -p dist && rm -rf dist/* && cp index.html dist && cp -rf bin dist/bin",
+    "deploy": "node deploy.js",
+    "postdeploy": "npm run clean && rm -rf dist"
   },
   "author": "Pyry Kröger",
   "license": "MIT",
@@ -20,6 +23,7 @@
     "eslint": "^1.5.1",
     "eslint-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^0.8.2",
+    "gh-pages": "^0.4.0",
     "postcss-color-rebeccapurple": "^2.0.0",
     "postcss-loader": "^0.6.0",
     "postcss-nested": "^1.0.0",
