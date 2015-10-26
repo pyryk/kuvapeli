@@ -17,4 +17,23 @@
 			color: red;
 		}
 	}
+
+	.images {
+		width: 600px;
+		height: 300px;
+	}
+
+	.tabs {
+
+
+		& > div {
+			cursor: pointer;
+			display: inline-block;
+			padding: 10px;
+
+			&:hover, &.active {
+				background: rgba(0,0,0,0.05);
+			}
+		}
+	}
 }

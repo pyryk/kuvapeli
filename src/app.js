@@ -1,35 +1,17 @@
 import Cycle from '@cycle/core';
 import {h, makeDOMDriver} from '@cycle/dom';
 import styles from './app.css';
-import _ from 'lodash';
 import {tabs} from './tabs';
 import {setup} from './setup';
+import vdomCss from './css-modules-vdom';
 
-function h2(selector, ...args) {
-	let [element, ...ids] = selector.split('.');
-	
-
-	return h.apply(h, [element + ids.map(id => '.' + styles[id])].concat(args));
-}
+const h2 = vdomCss(styles);
 
 const debug = (label) => (...args) => console.log.apply(console, [label].concat(args));
 
-const images = _.shuffle([
-	{
-		url: 'http://pkroger.org/pkro-futu-mv.jpg',
-		answer: 'pyry'
-	},
-	{
-		url: 'https://avatars2.githubusercontent.com/u/631969?v=3&s=460',
-		answer: 'pyry taas'
-	},
-	{
-		url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Sunflower_sky_backdrop.jpg/1024px-Sunflower_sky_backdrop.jpg',
-		answer: 'auringonkukka'
-	}
-]);
-
 function main({DOM}) {
+	let setupPanel = setup({DOM, props$: Cycle.Rx.Observable.just({label: 'Height', unit: 'cm', initial: []})}, '.height');
+
 	let inputValue$ = DOM.select('#answer').events('input')
 		.map(ev => { console.log('inputValue$'); return ev.target.value; })
 		.startWith('')
@@ -46,15 +28,14 @@ function main({DOM}) {
 		.map((code, i) => i)
 		.do(debug('afterMapI'))
 
-		.map(count => images[count % images.length])
+		.withLatestFrom(setupPanel.value$, (count, images) => images[count % images.length])
 		.do(debug('afterMapImage'))
 
 		.do(debug('afterFilter'))
 
-		.map(image => images[(images.indexOf(image) + 1) % images.length])
 		.do(debug('afterMapToNext'))
 
-		.startWith(images[0]);
+		.startWith({answer: 'blanche lambicus 2', url: 'https://dl.dropboxusercontent.com/u/328788/kuvapeli/blanche%20lambicus.jpg'});
 
 	let previousImage$ = image$
 		.pairwise()
@@ -76,7 +57,11 @@ function main({DOM}) {
 
 	// TODO extract actual game
 	function tabChildren(props, setup) {
+		console.log(props);
 		return [
+			h('div', [
+				setup
+			]),
 			h('div', [
 				h('div', [
 					h2('img.question-image', {src: props.image.url})
@@ -86,15 +71,11 @@ function main({DOM}) {
 					h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
 						[props.correct ? 'Oikein!' : 'Väärin!']) :
 					undefined,
-				h2('input#answer', {value: props.value})
-			]),
-			h('div', [
-				setup
+				h2('input#answer', {value: props.value, autofocus: true})
 			])
 		];
 	}
 
-	let setupPanel = setup({DOM, props$: Cycle.Rx.Observable.just({label: 'Height', unit: 'cm', min: 140, initial: 170, max: 210})}, '.height');
 	let tabProps$ = state$.combineLatest(setupPanel.DOM, (props, setupVTree) => ({default: 'tab1', children: tabChildren(props, setupVTree)}));
 	let tabPanel = tabs({DOM, props$: tabProps$});
 
