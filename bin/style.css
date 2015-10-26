@@ -1,0 +1,23 @@
+.app__app___e39Yk .app__question-image___2QdUu {
+    max-height: 500px;
+}
+.app__app___e39Yk .app__question___oyNHt {}
+.app__app___e39Yk .app__answer-correct-status___1Gg_t.app__good___cJuTN {
+    color: green;
+}
+.app__app___e39Yk .app__answer-correct-status___1Gg_t.app__bad___2Qiko {
+    color: red;
+}
+.app__app___e39Yk .app__images___3d0-O {
+    width: 600px;
+    height: 300px;
+}
+.app__app___e39Yk .app__tabs___33E8g > div {
+    cursor: pointer;
+    display: inline-block;
+    padding: 10px;
+}
+.app__app___e39Yk .app__tabs___33E8g > div:hover, .app__app___e39Yk .app__tabs___33E8g > div.app__active___1m78a {
+    background: rgba(0,0,0,0.05);
+}
+/*# sourceMappingURL=style.css.map*/
