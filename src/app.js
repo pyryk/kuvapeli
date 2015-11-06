@@ -57,10 +57,11 @@ function main({DOM}) {
 	let state$ = Cycle.Rx.Observable.combineLatest(
 		inputValue$,
 		image$,
+		previousImage$,
 		correctAnswer$,
 		startGame$
-	).map(([value, image, correct, startGame]) => {
-		return {value, image, correct, startGame};
+	).map(([value, image, previousImage, correct, startGame]) => {
+		return {value, image, previousImage, correct, startGame};
 	});
 
 	// TODO extract actual game
@@ -82,7 +83,7 @@ function main({DOM}) {
 			h2('h2.question', ['Mikä on kuvassa?']),
 			props.correct !== undefined ?
 				h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
-					[props.correct ? 'Oikein!' : 'Väärin!']) :
+					[props.correct ? 'Oikein!' : `Väärin! Oikea vastaus oli ${props.previousImage.answer}.`]) :
 				undefined,
 			h2('input#answer', {value: props.value, autofocus: true})
 		];
