@@ -12,6 +12,11 @@ const debug = (label) => (...args) => console.log.apply(console, [label].concat(
 function main({DOM}) {
 	let setupPanel = setup({DOM, props$: Cycle.Rx.Observable.just({label: 'Height', unit: 'cm', initial: []})}, '.height');
 
+	let startGame$ = DOM.select('.start-game').events('click')
+		.map(() => true)
+		.do(debug('startGame'))
+		.startWith(false);
+
 	let inputValue$ = DOM.select('#answer').events('input')
 		.map(ev => { console.log('inputValue$'); return ev.target.value; })
 		.startWith('')
@@ -23,6 +28,9 @@ function main({DOM}) {
 		.withLatestFrom(inputValue$, (code, value) => value);
 
 	let image$ = submit$
+		.merge(startGame$, (image) => {
+			return image;
+		})
 		.do(debug('afterSubmit'))
 
 		.map((code, i) => i)
@@ -35,7 +43,7 @@ function main({DOM}) {
 
 		.do(debug('afterMapToNext'))
 
-		.startWith({answer: 'blanche lambicus 2', url: 'https://dl.dropboxusercontent.com/u/328788/kuvapeli/blanche%20lambicus.jpg'});
+		.startWith(undefined);
 
 	let previousImage$ = image$
 		.pairwise()
@@ -50,9 +58,10 @@ function main({DOM}) {
 	let state$ = Cycle.Rx.Observable.combineLatest(
 		inputValue$,
 		image$,
-		correctAnswer$
-	).map(([value, image, correct]) => {
-		return {value, image, correct};
+		correctAnswer$,
+		startGame$
+	).map(([value, image, correct, startGame]) => {
+		return {value, image, correct, startGame};
 	});
 
 	// TODO extract actual game
@@ -62,26 +71,32 @@ function main({DOM}) {
 			h('div', [
 				setup
 			]),
-			h('div', [
-				h('div', [
-					h2('img.question-image', {src: props.image.url})
-				]),
-				h2('h2.question', ['Mikä on kuvassa?']),
-				props.correct !== undefined ?
-					h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
-						[props.correct ? 'Oikein!' : 'Väärin!']) :
-					undefined,
-				h2('input#answer', {value: props.value, autofocus: true})
-			])
+			h('div', props.startGame ? getGame(props) : h('input.start-game', {type: 'button', value: 'Aloita peli'}))
 		];
 	}
 
-	let tabProps$ = state$.combineLatest(setupPanel.DOM, (props, setupVTree) => ({default: 'tab1', children: tabChildren(props, setupVTree)}));
+	function getGame(props) {
+		return [
+			h('div', [
+				h2('img.question-image', {src: props.image.url})
+			]),
+			h2('h2.question', ['Mikä on kuvassa?']),
+			props.correct !== undefined ?
+				h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`, 
+					[props.correct ? 'Oikein!' : 'Väärin!']) :
+				undefined,
+			h2('input#answer', {value: props.value, autofocus: true})
+		];
+	}
+
+	let tabProps$ = state$.combineLatest(setupPanel.DOM, 
+		(props, setupVTree) => ({default: 'tab1', children: tabChildren(props, setupVTree)}));
 	let tabPanel = tabs({DOM, props$: tabProps$});
 
 	return {
 		DOM: state$.combineLatest(tabPanel.DOM, (props, tabsVTree) => {
 			return h2('div.app', [
+				h('h1', 'Kuvapeli'),
 				tabsVTree
 			]);
 		})
