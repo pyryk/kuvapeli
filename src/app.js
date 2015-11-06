@@ -7,7 +7,7 @@ import vdomCss from './css-modules-vdom';
 
 const h2 = vdomCss(styles);
 
-const debug = (label) => (...args) => console.log.apply(console, [label].concat(args));
+const debug = (label) => (...args) => console.log(...[label].concat(args));
 
 function main({DOM}) {
 	let setupPanel = setup({DOM, props$: Cycle.Rx.Observable.just({label: 'Height', unit: 'cm', initial: []})}, '.height');
@@ -19,8 +19,7 @@ function main({DOM}) {
 
 	let inputValue$ = DOM.select('#answer').events('input')
 		.map(ev => { console.log('inputValue$'); return ev.target.value; })
-		.startWith('')
-		.map(v => { return v; });
+		.startWith('');
 
 	let submit$ = DOM.select('#answer').events('keypress')
 		.map(ev => ev.keyCode)
