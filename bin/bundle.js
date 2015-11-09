@@ -34,7 +34,7 @@
 /******/ 	__webpack_require__.c = installedModules;
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/bin/";
+/******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
@@ -56,6 +56,8 @@
 	var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
 	var _cycleCore = __webpack_require__(2);
 	
@@ -83,7 +85,7 @@
 				args[_key] = arguments[_key];
 			}
 	
-			return console.log.apply(console, [label].concat(args));
+			return console.log.apply(console, _toConsumableArray([label].concat(args)));
 		};
 	};
 	
@@ -92,11 +94,13 @@
 	
 		var setupPanel = (0, _setup.setup)({ DOM: DOM, props$: _cycleCore2['default'].Rx.Observable.just({ label: 'Height', unit: 'cm', initial: [] }) }, '.height');
 	
+		var startGame$ = DOM.select('.start-game').events('click').map(function () {
+			return true;
+		})['do'](debug('startGame')).startWith(false);
+	
 		var inputValue$ = DOM.select('#answer').events('input').map(function (ev) {
 			console.log('inputValue$');return ev.target.value;
-		}).startWith('').map(function (v) {
-			return v;
-		});
+		}).startWith('');
 	
 		var submit$ = DOM.select('#answer').events('keypress').map(function (ev) {
 			return ev.keyCode;
@@ -106,11 +110,14 @@
 			return value;
 		});
 	
-		var image$ = submit$['do'](debug('afterSubmit')).map(function (code, i) {
+		var image$ = submit$.merge(startGame$, function (image) {
+			return image;
+		}) // trigger re-render with every startGame click
+		.map(function (code, i) {
 			return i;
-		})['do'](debug('afterMapI')).withLatestFrom(setupPanel.value$, function (count, images) {
+		}).withLatestFrom(setupPanel.value$, function (count, images) {
 			return images[count % images.length];
-		})['do'](debug('afterMapImage'))['do'](debug('afterFilter'))['do'](debug('afterMapToNext')).startWith({ answer: 'blanche lambicus 2', url: 'https://dl.dropboxusercontent.com/u/328788/kuvapeli/blanche%20lambicus.jpg' });
+		}).startWith(undefined);
 	
 		var previousImage$ = image$.pairwise().map(function (_ref2) {
 			var _ref22 = _slicedToArray(_ref2, 1);
@@ -123,20 +130,26 @@
 			return image.answer === value;
 		}).startWith(undefined);
 	
-		var state$ = _cycleCore2['default'].Rx.Observable.combineLatest(inputValue$, image$, correctAnswer$).map(function (_ref3) {
-			var _ref32 = _slicedToArray(_ref3, 3);
+		var state$ = _cycleCore2['default'].Rx.Observable.combineLatest(inputValue$, image$, previousImage$, correctAnswer$, startGame$).map(function (_ref3) {
+			var _ref32 = _slicedToArray(_ref3, 5);
 	
 			var value = _ref32[0];
 			var image = _ref32[1];
-			var correct = _ref32[2];
+			var previousImage = _ref32[2];
+			var correct = _ref32[3];
+			var startGame = _ref32[4];
 	
-			return { value: value, image: image, correct: correct };
+			return { value: value, image: image, previousImage: previousImage, correct: correct, startGame: startGame };
 		});
 	
 		// TODO extract actual game
-		function tabChildren(props, setup) {
+		function tabChildren(props, setupDOM) {
 			console.log(props);
-			return [(0, _cycleDom.h)('div', [setup]), (0, _cycleDom.h)('div', [(0, _cycleDom.h)('div', [h2('img.question-image', { src: props.image.url })]), h2('h2.question', ['Mikä on kuvassa?']), props.correct !== undefined ? h2('p.answer-correct-status.' + (props.correct ? 'good' : 'bad'), [props.correct ? 'Oikein!' : 'Väärin!']) : undefined, h2('input#answer', { value: props.value, autofocus: true })])];
+			return [(0, _cycleDom.h)('div', [setupDOM]), (0, _cycleDom.h)('div', props.startGame ? getGame(props) : (0, _cycleDom.h)('input.start-game', { type: 'button', value: 'Aloita peli' }))];
+		}
+	
+		function getGame(props) {
+			return [(0, _cycleDom.h)('div', [h2('img.question-image', { src: props.image.url })]), h2('h2.question', ['Mikä on kuvassa?']), props.correct !== undefined ? h2('p.answer-correct-status.' + (props.correct ? 'good' : 'bad'), [props.correct ? 'Oikein!' : 'Väärin! Oikea vastaus oli ' + props.previousImage.answer + '.']) : undefined, h2('input#answer', { value: props.value, autofocus: true })];
 		}
 	
 		var tabProps$ = state$.combineLatest(setupPanel.DOM, function (props, setupVTree) {
@@ -146,7 +159,7 @@
 	
 		return {
 			DOM: state$.combineLatest(tabPanel.DOM, function (props, tabsVTree) {
-				return h2('div.app', [tabsVTree]);
+				return h2('div.app', [(0, _cycleDom.h)('h1', 'Kuvapeli'), tabsVTree]);
 			})
 		};
 	}
@@ -17083,7 +17096,7 @@
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
-	module.exports = {"app":"app__app___e39Yk","question-image":"app__question-image___2QdUu","question":"app__question___oyNHt","answer-correct-status":"app__answer-correct-status___1Gg_t","good":"app__good___cJuTN","bad":"app__bad___2Qiko","images":"app__images___3d0-O","tabs":"app__tabs___33E8g","active":"app__active___1m78a"};
+	module.exports = {"app":"app__app___e39Yk","question-image":"app__question-image___2QdUu","question":"app__question___oyNHt","answer-correct-status":"app__answer-correct-status___1Gg_t","good":"app__good___cJuTN","bad":"app__bad___2Qiko","images":"app__images___3d0-O","tabs":"app__tabs___33E8g","active":"app__active___1m78a","drop-target":"app__drop-target___2bqt2","image-list":"app__image-list___3tZJy"};
 
 /***/ },
 /* 122 */
@@ -17092,7 +17105,7 @@
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
-	  value: true
+		value: true
 	});
 	exports.tabs = tabs;
 	
@@ -17110,37 +17123,36 @@
 	
 	var _appCss2 = _interopRequireDefault(_appCss);
 	
-	var h2 = (0, _cssModulesVdom2['default'])(_appCss2['default']);
+	var h2 = (0, _cssModulesVdom2['default'])(_appCss2['default'], 'tab1', 'tab2');
 	
 	function tabs(_ref) {
-	  var DOM = _ref.DOM;
-	  var props$ = _ref.props$;
-	  var name = arguments.length <= 1 || arguments[1] === undefined ? 'default' : arguments[1];
+		var DOM = _ref.DOM;
+		var props$ = _ref.props$;
 	
-	  var initialValue$ = props$.map(function (props) {
-	    return props['default'];
-	  }).first();
+		var initialValue$ = props$.map(function (props) {
+			return props['default'];
+		}).first();
 	
-	  // TODO make tab-number independent
-	  var tab1$ = DOM.select('.tab1').events('click').map(function () {
-	    return 'tab1';
-	  });
-	  var tab2$ = DOM.select('.tab2').events('click').map(function () {
-	    return 'tab2';
-	  });
+		// TODO make tab-number independent
+		var tab1$ = DOM.select('.tab1').events('click').map(function () {
+			return 'tab1';
+		});
+		var tab2$ = DOM.select('.tab2').events('click').map(function () {
+			return 'tab2';
+		});
 	
-	  var value$ = initialValue$.concat(_cycleCore.Rx.Observable.merge(tab1$, tab2$))['do'](function (v) {
-	    return console.log(v);
-	  });
+		var value$ = initialValue$.concat(_cycleCore.Rx.Observable.merge(tab1$, tab2$))['do'](function (v) {
+			return console.log(v);
+		});
 	
-	  var vtree$ = _cycleCore.Rx.Observable.combineLatest(props$, value$, function (props, value) {
-	    return (0, _cycleDom.h)('div.labeled-slider.' + name, [h2('div.tabs', [h2('div.tab1-container' + (value === 'tab1' ? '.active' : ''), [(0, _cycleDom.h)('div.tab1', ['Setup'])]), h2('div.tab1-container' + (value === 'tab2' ? '.active' : ''), [(0, _cycleDom.h)('div.tab2', ['Peli'])])]), (0, _cycleDom.h)('div.container', value === 'tab1' ? props.children[0] : props.children[1])]);
-	  });
+		var vtree$ = _cycleCore.Rx.Observable.combineLatest(props$, value$, function (props, value) {
+			return (0, _cycleDom.h)('div.tabs-container', [h2('div.tabs', [h2('div.tab1' + (value === 'tab1' ? '.active' : ''), ['Setup']), h2('div.tab2' + (value === 'tab2' ? '.active' : ''), ['Peli'])]), (0, _cycleDom.h)('div.container', value === 'tab1' ? props.children[0] : props.children[1])]);
+		});
 	
-	  return {
-	    DOM: vtree$,
-	    value$: value$
-	  };
+		return {
+			DOM: vtree$,
+			value$: value$
+		};
 	}
 
 /***/ },
@@ -17157,7 +17169,19 @@
 	
 	var _cycleDom = __webpack_require__(6);
 	
+	function classIsReplaced(ignoredClasses, className) {
+		return ignoredClasses.indexOf(className) === -1;
+	}
+	
+	function getClassName(className, styles, ignoredClasses) {
+		return classIsReplaced(ignoredClasses, className) ? '.' + styles[className] : '.' + className;
+	}
+	
 	exports['default'] = function (styles) {
+		for (var _len = arguments.length, ignoredClasses = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+			ignoredClasses[_key - 1] = arguments[_key];
+		}
+	
 		return function h2(selector) {
 			var _selector$split = selector.split('.');
 	
@@ -17167,12 +17191,12 @@
 	
 			var ids = _selector$split2.slice(1);
 	
-			for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-				args[_key - 1] = arguments[_key];
+			for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+				args[_key2 - 1] = arguments[_key2];
 			}
 	
 			return _cycleDom.h.apply(_cycleDom.h, [element + ids.map(function (id) {
-				return '.' + styles[id];
+				return getClassName(id, styles, ignoredClasses);
 			})].concat(args));
 		};
 	};
@@ -17186,7 +17210,7 @@
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
-	  value: true
+		value: true
 	});
 	exports.setup = setup;
 	
@@ -17200,50 +17224,146 @@
 	
 	var _appCss2 = _interopRequireDefault(_appCss);
 	
-	var _cssModulesVdom = __webpack_require__(123);
+	//import vdCss  from './css-modules-vdom';
 	
-	var _cssModulesVdom2 = _interopRequireDefault(_cssModulesVdom);
+	var _hyperscriptHelpers = __webpack_require__(125);
 	
-	var h2 = (0, _cssModulesVdom2['default'])(_appCss2['default']);
+	var _hyperscriptHelpers2 = _interopRequireDefault(_hyperscriptHelpers);
+	
+	var _hh = (0, _hyperscriptHelpers2['default'])(_cycleDom.h);
+	
+	var div = _hh.div;
+	var h2 = _hh.h2;
+	var textarea = _hh.textarea;
+	var img = _hh.img;
+	
+	//const h2 = vdCss(styles);
 	
 	function generateAnswer(url) {
-	  return decodeURIComponent(url.substring(url.lastIndexOf('/') + 1, url.lastIndexOf('.')));
+		var isUrlEncoded = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+	
+		var nameStart = url.lastIndexOf('/') === -1 ? 0 : url.lastIndexOf('/') + 1;
+		var nameEnd = url.lastIndexOf('.') === -1 ? url.length : url.lastIndexOf('.');
+		if (isUrlEncoded) {
+			return decodeURIComponent(url.substring(nameStart, nameEnd));
+		} else {
+			return url.substring(nameStart, nameEnd);
+		}
+	}
+	
+	function dragenter(e) {
+		console.log('dragenter', e);
+		e.stopPropagation();
+		e.preventDefault();
+	}
+	
+	function dragover(e) {
+		console.log('dragover', e);
+		e.stopPropagation();
+		e.preventDefault();
 	}
 	
 	function setup(_ref) {
-	  var DOM = _ref.DOM;
-	  var props$ = _ref.props$;
+		var DOM = _ref.DOM;
+		var props$ = _ref.props$;
 	
-	  var initialValue$ = props$.map(function (props) {
-	    return props.initial;
-	  }).first();
-	  var newValue$ = DOM.select('textarea').events('change').map(function (ev) {
-	    return ev.target.value.split(/\n/);
-	  }).map(function (values) {
-	    return values.filter(function (v) {
-	      return !!v.trim();
-	    });
-	  }).map(function (values) {
-	    return values.map(function (v) {
-	      return { url: v, answer: generateAnswer(v) };
-	    });
-	  })['do'](function (text) {
-	    return console.log('textarea', text);
-	  });
-	  var value$ = initialValue$.concat(newValue$);
-	  var vtree$ = _cycleCore.Rx.Observable.combineLatest(props$, value$, function (props, value) {
-	    return (0, _cycleDom.h)('div.setup', [(0, _cycleDom.h)('h2.label', ['Kuvat']), h2('textarea.images', {
-	      value: value.map(function (v) {
-	        return v.url;
-	      }).join('\n')
-	    })]);
-	  });
+		var initialValue$ = props$.map(function (props) {
+			return props.initial;
+		}).first();
 	
-	  return {
-	    DOM: vtree$,
-	    value$: value$
-	  };
+		var newValue$ = DOM.select('textarea').events('change').map(function (ev) {
+			return ev.target.value.split(/\n/);
+		}).map(function (values) {
+			return values.filter(function (v) {
+				return !!v.trim();
+			});
+		}).map(function (values) {
+			return values.map(function (v) {
+				return { url: v, answer: generateAnswer(v, true) };
+			});
+		});
+	
+		var dragEnter$ = DOM.select('.drop-target').events('dragenter').map(dragenter).startWith(undefined);
+		var dragOver$ = DOM.select('.drop-target').events('dragover').map(dragover).startWith(undefined);
+	
+		var dropped$ = DOM.select('.drop-target').events('drop').map(function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			return Array.from(e.dataTransfer.files);
+		})['do'](function (files) {
+			return console.log('drop', files);
+		}).map(function (files) {
+			return files.map(function (file) {
+				return { url: URL.createObjectURL(file), answer: generateAnswer(file.name, false) };
+			});
+		}).startWith([]);
+		var value$ = initialValue$.concat(newValue$).combineLatest(dropped$, function (written, dropped) {
+			return written.concat(dropped);
+		});
+		var vtree$ = _cycleCore.Rx.Observable.combineLatest(props$, value$, dropped$, dragEnter$, dragOver$, function (props, value, dropped) {
+			return div('.setup', [h2('.label', ['Kuvat']), textarea('.' + _appCss2['default'].images, {
+				value: value.map(function (v) {
+					return v.url;
+				}).join('\n')
+			}), div('.' + _appCss2['default']['drop-target'] + '.drop-target', ['Tai raahaa tiedostot tähän', '' + dropped.map(function (f) {
+				return f.answer;
+			}).join(', ')]), div('.' + _appCss2['default']['image-list'] + '.image-list', dropped.map(function (image) {
+				return img({ src: image.url });
+			}))]);
+		});
+	
+		return {
+			DOM: vtree$,
+			value$: value$
+		};
 	}
+
+/***/ },
+/* 125 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	var isValidString = function isValidString(param) {
+	  return typeof param === 'string' && param.length > 0;
+	};
+	
+	var startsWith = function startsWith(string, start) {
+	  return string.indexOf(start) === 0;
+	};
+	
+	var isSelector = function isSelector(param) {
+	  return isValidString(param) && (startsWith(param, '.') || startsWith(param, '#'));
+	};
+	
+	var node = function node(h) {
+	  return function (tagName) {
+	    return function (first) {
+	      for (var _len = arguments.length, rest = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	        rest[_key - 1] = arguments[_key];
+	      }
+	
+	      if (isSelector(first)) {
+	        return h.apply(undefined, [tagName + first].concat(rest));
+	      } else {
+	        return h.apply(undefined, [tagName, first].concat(rest));
+	      }
+	    };
+	  };
+	};
+	
+	var TAG_NAMES = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'map', 'mark', 'menu', 'meta', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option', 'p', 'param', 'pre', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strong', 'style', 'sub', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'title', 'tr', 'u', 'ul', 'video'];
+	
+	module.exports = function (h) {
+	  var exported = {};
+	  TAG_NAMES.forEach(function (n) {
+	    exported[n] = node(h)(n);
+	  });
+	  exported.TAG_NAMES = TAG_NAMES;
+	  exported.isSelector = isSelector;
+	  return exported;
+	};
+
 
 /***/ }
 /******/ ]);

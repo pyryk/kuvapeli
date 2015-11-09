@@ -20,4 +20,15 @@
 .app__app___e39Yk .app__tabs___33E8g > div:hover, .app__app___e39Yk .app__tabs___33E8g > div.app__active___1m78a {
     background: rgba(0,0,0,0.05);
 }
+.app__app___e39Yk .app__drop-target___2bqt2 {
+    box-sizing: border-box;
+    margin: 1em 0;
+    border: 1px solid #ccc;
+    padding: 1em;
+    width: 600px;
+}
+.app__app___e39Yk .app__image-list___3tZJy > img {
+    max-width: 400px;
+    margin: 1em;
+}
 /*# sourceMappingURL=style.css.map*/
