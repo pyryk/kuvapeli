@@ -4,12 +4,18 @@ import styles from './app.css';
 //import vdCss  from './css-modules-vdom';
 import hh from 'hyperscript-helpers';
 
-const { div, h2, textarea } = hh(h);
+const { div, h2, textarea, img } = hh(h);
 
 //const h2 = vdCss(styles);
 
-function generateAnswer(url) {
-	return decodeURIComponent(url.substring(url.lastIndexOf('/') + 1, url.lastIndexOf('.')));
+function generateAnswer(url, isUrlEncoded = true) {
+	const nameStart = url.lastIndexOf('/') === -1 ? 0 : (url.lastIndexOf('/') + 1);
+	const nameEnd = url.lastIndexOf('.') === -1 ? (url.length) : url.lastIndexOf('.');
+	if (isUrlEncoded) {
+		return decodeURIComponent(url.substring(nameStart, nameEnd));
+	} else {
+		return url.substring(nameStart, nameEnd);
+	}
 }
 
 function dragenter(e) {
@@ -30,23 +36,22 @@ export function setup({ DOM, props$ }) {
 	const newValue$ = DOM.select(`textarea`).events('change')
 		.map(ev => ev.target.value.split(/\n/))
 		.map(values => values.filter(v => !!v.trim()))
-		.map(values => values.map(v => ({ url: v, answer: generateAnswer(v) })));
+		.map(values => values.map(v => ({ url: v, answer: generateAnswer(v, true) })));
 
-	const clicks$ = DOM.select('.drop-target').events('click').map((e, i) => i + 1).startWith(0);
 	const dragEnter$ = DOM.select('.drop-target').events('dragenter').map(dragenter).startWith(undefined);
 	const dragOver$ = DOM.select('.drop-target').events('dragover').map(dragover).startWith(undefined);
-
-	console.log(clicks$);
 
 	const dropped$ = DOM.select('.drop-target').events('drop')
 		.map(e => {
 			e.preventDefault();
 			e.stopPropagation();
+			return Array.from(e.dataTransfer.files);
 		})
-		.map(() => 'public/sandels.jpg')
+		.do(files => console.log('drop', files))
+		.map(files => files.map(file => ({ url: URL.createObjectURL(file), answer: generateAnswer(file.name, false) })))
 		.startWith([]);
-	const value$ = initialValue$.concat(newValue$);
-	const vtree$ = Rx.Observable.combineLatest(props$, value$, clicks$, dropped$, dragEnter$, dragOver$, (props, value, clicks, dropped) =>
+	const value$ = initialValue$.concat(newValue$).combineLatest(dropped$, (written, dropped) => written.concat(dropped));
+	const vtree$ = Rx.Observable.combineLatest(props$, value$, dropped$, dragEnter$, dragOver$, (props, value, dropped) =>
 		div(`.setup`, [
 			h2('.label', [
 				'Kuvat'
@@ -54,7 +59,8 @@ export function setup({ DOM, props$ }) {
 			textarea(`.${styles.images}`, {
 				value: value.map(v => v.url).join('\n')
 			}),
-			div(`.${styles['drop-target']}.drop-target`, ['Tai raahaa tiedostot tähän', `Clicks: ${clicks}`, `${dropped}`])
+			div(`.${styles['drop-target']}.drop-target`, ['Tai raahaa tiedostot tähän', `${dropped.map(f => f.answer).join(', ')}`]),
+			div(`.${styles['image-list']}.image-list`, dropped.map(image => img({ src: image.url })))
 		])
 	);
 
