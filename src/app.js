@@ -27,21 +27,9 @@ function main({ DOM }) {
 		.withLatestFrom(inputValue$, (code, value) => value);
 
 	const image$ = submit$
-		.merge(startGame$, (image) => {
-			return image;
-		})
-		.do(debug('afterSubmit'))
-
+		.merge(startGame$, (image) => image) // trigger re-render with every startGame click
 		.map((code, i) => i)
-		.do(debug('afterMapI'))
-
 		.withLatestFrom(setupPanel.value$, (count, images) => images[count % images.length])
-		.do(debug('afterMapImage'))
-
-		.do(debug('afterFilter'))
-
-		.do(debug('afterMapToNext'))
-
 		.startWith(undefined);
 
 	const previousImage$ = image$
