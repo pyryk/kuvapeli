@@ -4,7 +4,7 @@ import styles from './app.css';
 //import vdCss  from './css-modules-vdom';
 import hh from 'hyperscript-helpers';
 
-const { div, h2, textarea, img } = hh(h);
+const { div, h2, textarea, img, a, ul, li } = hh(h);
 
 //const h2 = vdCss(styles);
 
@@ -42,7 +42,6 @@ export function setup({ DOM }) {
 	const dragEnter$ = DOM.select('.' + styles['drop-target']).events('dragenter').map(dragenter).startWith(undefined);
 	const dragOver$ = DOM.select('.' + styles['drop-target']).events('dragover').map(dragover).startWith(undefined);
 
-
 	const dropped$ = DOM.select('.' + styles['drop-target']).events('drop')
 		.map(e => {
 			e.preventDefault();
@@ -57,16 +56,29 @@ export function setup({ DOM }) {
 		.combineLatest(dropped$, (written, dropped) => written.concat(dropped))
 		.do((...args) => console.log('setup images', ...args));
 
+	const showFiles = (images) => {
+		if (images && images.length > 0) {
+			return ul(
+				images.map(image => li([
+					a({ href: image.url, target: '_blank' }, image.answer)
+				]))
+			);
+		} else {
+			return '';
+		}
+	};
+
 	const vtree$ = Rx.Observable.combineLatest(value$, written$, dropped$, dragEnter$, dragOver$, (value, written, dropped) =>
 		div(`.setup`, [
 			h2('.label', [
 				'Kuvat'
 			]),
+			div(`.${styles['drop-target']}.drop-target`, ['Raahaa tiedostot tähän ', showFiles(dropped)]),
+			div(`.${styles['image-list']}.image-list`, value.map(image => img({ src: image.url, title: image.answer }))),
+			div('.textarea-hint', 'Tai syötä kuvien URL:t alle'),
 			textarea(`.${styles.images}`, {
 				value: written.map(v => v.url).join('\n')
-			}),
-			div(`.${styles['drop-target']}.drop-target`, ['Tai raahaa tiedostot tähän ', `${dropped.map(f => f.answer).join(', ')}`]),
-			div(`.${styles['image-list']}.image-list`, value.map(image => img({ src: image.url, title: image.answer })))
+			})
 		])
 	);
 
