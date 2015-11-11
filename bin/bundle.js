@@ -139,7 +139,7 @@
 		}).do(debug('previousImage'));
 	
 		var correctAnswer$ = previousImage$.withLatestFrom(inputValue$, function (image, value) {
-			return image ? image.answer === value : undefined;
+			return image ? image.answer.normalize() === value.normalize() : undefined;
 		});
 	
 		var state$ = _rx2.default.Observable.combineLatest(inputValue$, image$, previousImage$, correctAnswer$).map(function (_ref4) {
