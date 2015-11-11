@@ -1,4 +1,5 @@
 import Cycle from '@cycle/core';
+import Rx from 'rx';
 import { h, makeDOMDriver } from '@cycle/dom';
 import styles from './app.css';
 import { tabs } from './tabs';
@@ -10,69 +11,68 @@ const h2 = vdomCss(styles);
 const debug = (label) => (...args) => console.log(...[label].concat(args));
 
 function main({ DOM }) {
-	const setupPanel = setup({ DOM, props$: Cycle.Rx.Observable.just({ label: 'Height', unit: 'cm', initial: [] }) }, '.height');
-
-	const startGame$ = DOM.select('.start-game').events('click')
-		.map(() => true)
-		.do(debug('startGame'))
-		.startWith(false);
+	const setupPanel = setup({ DOM, props$: Rx.Observable.just({ label: 'Height', unit: 'cm', initial: [] }) }, '.height');
 
 	const inputValue$ = DOM.select('#answer').events('input')
-		.map(ev => { console.log('inputValue$'); return ev.target.value; })
+		.map(ev => ev.target.value)
 		.startWith('');
 
 	const submit$ = DOM.select('#answer').events('keypress')
 		.map(ev => ev.keyCode)
 		.filter(code => code === 13)
-		.withLatestFrom(inputValue$, (code, value) => value);
+		.throttle(200)
+		.do(debug('enter pressed'))
+		.withLatestFrom(inputValue$, (code, value) => value)
+		.startWith(null);
 
 	const image$ = submit$
-		.merge(startGame$, (image) => image) // trigger re-render with every startGame click
+		.do(debug('submit'))
 		.map((code, i) => i)
-		.withLatestFrom(setupPanel.value$, (count, images) => images[count % images.length])
+		.combineLatest(setupPanel.value$, (count, images) => images[count % images.length])
 		.startWith(undefined);
 
 	const previousImage$ = image$
 		.pairwise()
+		.do(a => console.log('previousImage', a))
 		.map(([previous]) => previous);
 
-	const correctAnswer$ = submit$
+	const correctAnswer$ = previousImage$
 		.withLatestFrom(
-			previousImage$,
-			(value, image) => image.answer === value
-		).startWith(undefined);
+			inputValue$,
+			(image, value) => image ? image.answer === value : undefined
+		);
 
-	const state$ = Cycle.Rx.Observable.combineLatest(
+	const state$ = Rx.Observable.combineLatest(
 		inputValue$,
 		image$,
 		previousImage$,
-		correctAnswer$,
-		startGame$
-	).map(([value, image, previousImage, correct, startGame]) => {
-		return { value, image, previousImage, correct, startGame };
+		correctAnswer$
+	).map(([value, image, previousImage, correct]) => {
+		console.log('state:', arguments);
+		return { value, image, previousImage, correct };
 	});
 
 	// TODO extract actual game
 	function tabChildren(props, setupDOM) {
-		console.log(props);
+		console.log('props', props);
 		return [
 			h('div', [
 				setupDOM
 			]),
-			h('div', props.startGame ? getGame(props) : h('input.start-game', { type: 'button', value: 'Aloita peli' }))
+			h('div', getGame(props))
 		];
 	}
 
 	function getGame(props) {
 		return [
 			h('div', [
-				h2('img.question-image', { src: props.image.url })
+				props.image ? h2('img.question-image', { src: props.image.url }) : 'Lisää kuvia setup-välilehdeltä'
 			]),
 			h2('h2.question', ['Mikä on kuvassa?']),
 			props.correct !== undefined ?
 				h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`,
 					[props.correct ? 'Oikein!' : `Väärin! Oikea vastaus oli ${props.previousImage.answer}.`]) :
-				undefined,
+				h(`p.answer-correct-status`),
 			h2('input#answer', { value: props.value, autofocus: true })
 		];
 	}

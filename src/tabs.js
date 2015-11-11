@@ -1,4 +1,4 @@
-import { Rx } from '@cycle/core';
+import Rx from 'rx';
 import { h } from '@cycle/dom';
 import vc from './css-modules-vdom';
 import styles from './app.css';

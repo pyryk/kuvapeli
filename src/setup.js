@@ -1,4 +1,4 @@
-import { Rx } from '@cycle/core';
+import Rx from 'rx';
 import { h } from '@cycle/dom';
 import styles from './app.css';
 //import vdCss  from './css-modules-vdom';
@@ -30,37 +30,45 @@ function dragover(e) {
 	e.preventDefault();
 }
 
-export function setup({ DOM, props$ }) {
-	const initialValue$ = props$.map(props => props.initial).first();
+export function setup({ DOM }) {
 
-	const newValue$ = DOM.select(`textarea`).events('change')
+	const written$ = DOM.select(`textarea`).events('change')
 		.map(ev => ev.target.value.split(/\n/))
 		.map(values => values.filter(v => !!v.trim()))
-		.map(values => values.map(v => ({ url: v, answer: generateAnswer(v, true) })));
+		.map(values => values.map(v => ({ url: v, answer: generateAnswer(v, true) })))
+		.do((values) => console.log('written', values))
+		.startWith([]);
 
-	const dragEnter$ = DOM.select('.drop-target').events('dragenter').map(dragenter).startWith(undefined);
-	const dragOver$ = DOM.select('.drop-target').events('dragover').map(dragover).startWith(undefined);
+	const dragEnter$ = DOM.select('.' + styles['drop-target']).events('dragenter').map(dragenter).startWith(undefined);
+	const dragOver$ = DOM.select('.' + styles['drop-target']).events('dragover').map(dragover).startWith(undefined);
 
-	const dropped$ = DOM.select('.drop-target').events('drop')
+
+	const dropped$ = DOM.select('.' + styles['drop-target']).events('drop')
 		.map(e => {
+			console.log(e.target);
 			e.preventDefault();
 			e.stopPropagation();
 			return Array.from(e.dataTransfer.files);
 		})
+		.debounce(500)
 		.do(files => console.log('drop', files))
 		.map(files => files.map(file => ({ url: URL.createObjectURL(file), answer: generateAnswer(file.name, false) })))
 		.startWith([]);
-	const value$ = initialValue$.concat(newValue$).combineLatest(dropped$, (written, dropped) => written.concat(dropped));
-	const vtree$ = Rx.Observable.combineLatest(props$, value$, dropped$, dragEnter$, dragOver$, (props, value, dropped) =>
+
+	const value$ = written$
+		.combineLatest(dropped$, (written, dropped) => written.concat(dropped))
+		.do((...args) => console.log('setup images', ...args));
+
+	const vtree$ = Rx.Observable.combineLatest(value$, written$, dropped$, dragEnter$, dragOver$, (value, written, dropped) =>
 		div(`.setup`, [
 			h2('.label', [
 				'Kuvat'
 			]),
 			textarea(`.${styles.images}`, {
-				value: value.map(v => v.url).join('\n')
+				value: written.map(v => v.url).join('\n')
 			}),
-			div(`.${styles['drop-target']}.drop-target`, ['Tai raahaa tiedostot tähän', `${dropped.map(f => f.answer).join(', ')}`]),
-			div(`.${styles['image-list']}.image-list`, dropped.map(image => img({ src: image.url })))
+			div(`.${styles['drop-target']}.drop-target`, ['Tai raahaa tiedostot tähän ', `${dropped.map(f => f.answer).join(', ')}`]),
+			div(`.${styles['image-list']}.image-list`, value.map(image => img({ src: image.url, title: image.answer })))
 		])
 	);
 

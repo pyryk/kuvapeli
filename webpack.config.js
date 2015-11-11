@@ -10,6 +10,7 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, "bin"),
+        publicPath: "/bin/",
         filename: "bundle.js"
     },
     module: {
@@ -17,7 +18,7 @@ module.exports = {
             {test: /\.js$/, loader: "eslint-loader", exclude: /node_modules/}
         ],
         loaders: [
-            { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"},
+            { test: /\.js$/, exclude: /node_modules/, loader: "babel", query: {cacheDirectory: true, presets: ['es2015']}},
             { test: /\.css$/, loader: ExtractTextPlugin.extract('style-loader', 'css-loader?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader') }
         ]
     },
