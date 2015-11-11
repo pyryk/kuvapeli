@@ -46,7 +46,7 @@ function main({ DOM }) {
 	const correctAnswer$ = previousImage$
 		.withLatestFrom(
 			inputValue$,
-			(image, value) => image ? image.answer === value : undefined
+			(image, value) => image ? image.answer.normalize() === value.normalize() : undefined
 		);
 
 	const state$ = Rx.Observable.combineLatest(
