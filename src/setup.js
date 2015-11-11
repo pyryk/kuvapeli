@@ -45,12 +45,10 @@ export function setup({ DOM }) {
 
 	const dropped$ = DOM.select('.' + styles['drop-target']).events('drop')
 		.map(e => {
-			console.log(e.target);
 			e.preventDefault();
 			e.stopPropagation();
 			return Array.from(e.dataTransfer.files);
 		})
-		.debounce(500)
 		.do(files => console.log('drop', files))
 		.map(files => files.map(file => ({ url: URL.createObjectURL(file), answer: generateAnswer(file.name, false) })))
 		.startWith([]);

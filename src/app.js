@@ -5,36 +5,43 @@ import styles from './app.css';
 import { tabs } from './tabs';
 import { setup } from './setup';
 import vdomCss from './css-modules-vdom';
+import ss from 'seededshuffle';
 
 const h2 = vdomCss(styles);
 
 const debug = (label) => (...args) => console.log(...[label].concat(args));
 
+// NOTE this is a quick workaround for a bug which causes image$ and
+// previousImage$ to go out of sync when the shuffling is indeterministic
+const shuffleSeed = Date.now();
+
 function main({ DOM }) {
-	const setupPanel = setup({ DOM, props$: Rx.Observable.just({ label: 'Height', unit: 'cm', initial: [] }) }, '.height');
+	const setupPanel = setup({ DOM });
+
+	const shuffledImages$ = setupPanel.value$
+		.map(images => ss.shuffle(images, shuffleSeed, true));
 
 	const inputValue$ = DOM.select('#answer').events('input')
 		.map(ev => ev.target.value)
 		.startWith('');
 
-	const submit$ = DOM.select('#answer').events('keypress')
+	console.log(DOM.select('#answer'));
+	const submit$ = DOM.select('#answer').events('keyup')
 		.map(ev => ev.keyCode)
 		.filter(code => code === 13)
-		.throttle(200)
-		.do(debug('enter pressed'))
 		.withLatestFrom(inputValue$, (code, value) => value)
 		.startWith(null);
 
 	const image$ = submit$
 		.do(debug('submit'))
 		.map((code, i) => i)
-		.combineLatest(setupPanel.value$, (count, images) => images[count % images.length])
+		.combineLatest(shuffledImages$, (count, images) => { console.log('current images', images); return images[count % images.length]; })
 		.startWith(undefined);
 
 	const previousImage$ = image$
 		.pairwise()
-		.do(a => console.log('previousImage', a))
-		.map(([previous]) => previous);
+		.map(([previous]) => previous)
+		.do(debug('previousImage'));
 
 	const correctAnswer$ = previousImage$
 		.withLatestFrom(
@@ -48,7 +55,6 @@ function main({ DOM }) {
 		previousImage$,
 		correctAnswer$
 	).map(([value, image, previousImage, correct]) => {
-		console.log('state:', arguments);
 		return { value, image, previousImage, correct };
 	});
 
@@ -73,7 +79,7 @@ function main({ DOM }) {
 				h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`,
 					[props.correct ? 'Oikein!' : `Väärin! Oikea vastaus oli ${props.previousImage.answer}.`]) :
 				h(`p.answer-correct-status`),
-			h2('input#answer', { value: props.value, autofocus: true })
+			h2('input#answer', { autofocus: true })
 		];
 	}
 
