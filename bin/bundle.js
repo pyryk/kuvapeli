@@ -83,9 +83,17 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
 	var h2 = (0, _cssModulesVdom2.default)(_app2.default);
+	
+	var correctStates = {
+		CORRECT: 'CORRECT',
+		PARTLY: 'PARTLY',
+		INCORRECT: 'INCORRECT'
+	};
 	
 	var debug = function debug(label) {
 		return function () {
@@ -116,7 +124,6 @@
 			return ev.target.value;
 		}).startWith('');
 	
-		console.log(DOM.select('#answer'));
 		var submit$ = DOM.select('#answer').events('keyup').map(function (ev) {
 			return ev.keyCode;
 		}).filter(function (code) {
@@ -128,7 +135,11 @@
 		var image$ = submit$.do(debug('submit')).map(function (code, i) {
 			return i;
 		}).combineLatest(shuffledImages$, function (count, images) {
-			console.log('current images', images);return images[count % images.length];
+			if (count < images.length || images.length === 0) {
+				return images[count];
+			} else {
+				return { done: true, answer: '', url: '' };
+			}
 		}).startWith(undefined);
 	
 		var previousImage$ = image$.pairwise().map(function (_ref2) {
@@ -136,21 +147,49 @@
 	
 			var previous = _ref3[0];
 			return previous;
-		}).do(debug('previousImage'));
-	
-		var correctAnswer$ = previousImage$.withLatestFrom(inputValue$, function (image, value) {
-			return image ? image.answer.normalize() === value.normalize() : undefined;
 		});
 	
-		var state$ = _rx2.default.Observable.combineLatest(inputValue$, image$, previousImage$, correctAnswer$).map(function (_ref4) {
-			var _ref5 = _slicedToArray(_ref4, 4);
+		var correctAnswer$ = previousImage$.withLatestFrom(inputValue$, function (image, value) {
+			if (image) {
+				var imageNormalized = image.answer.normalize();
+				var valueNormalized = value.normalize();
+				if (imageNormalized === valueNormalized) {
+					return correctStates.CORRECT;
+				} else if (imageNormalized.indexOf(valueNormalized) > -1 || valueNormalized.indexOf(imageNormalized) > -1) {
+					return correctStates.PARTLY;
+				} else {
+					return correctStates.INCORRECT;
+				}
+			} else {
+				return undefined;
+			}
+		});
+	
+		var stats$ = correctAnswer$.filter(function (value) {
+			return value !== undefined;
+		}).do(debug('stats filter')).scan(function (memo, value) {
+			console.log(memo, value);return memo.concat(value);
+		}, []).do(debug('stats scan')).startWith([]).do(debug('stats values')).map(function (values) {
+			return {
+				correct: values.filter(function (v) {
+					return v === correctStates.CORRECT;
+				}).length,
+				partly: values.filter(function (v) {
+					return v === correctStates.PARTLY;
+				}).length,
+				total: values.length };
+		});
+	
+		var state$ = _rx2.default.Observable.combineLatest(inputValue$, image$, previousImage$, correctAnswer$, stats$).map(function (_ref4) {
+			var _ref5 = _slicedToArray(_ref4, 5);
 	
 			var value = _ref5[0];
 			var image = _ref5[1];
 			var previousImage = _ref5[2];
 			var correct = _ref5[3];
+			var stats = _ref5[4];
 	
-			return { value: value, image: image, previousImage: previousImage, correct: correct };
+			return { value: value, image: image, previousImage: previousImage, correct: correct, stats: stats };
 		});
 	
 		// TODO extract actual game
@@ -159,8 +198,33 @@
 			return [(0, _dom.h)('div', [setupDOM]), (0, _dom.h)('div', getGame(props))];
 		}
 	
+		function getImageEl(props) {
+			if (props.image) {
+				if (props.image.done) {
+					return h2('div.game-over', 'Peli ohi! Sait oikein ' + props.stats.correct + ' ' + (props.stats.partly > 0 ? '( + ' + props.stats.partly + ')' : '') + ' / ' + props.stats.total + ' kuvaa.');
+				} else {
+					return h2('img.question-image', { src: props.image.url });
+				}
+			} else {
+				return 'Lisää kuvia setup-välilehdeltä';
+			}
+		}
+	
+		function getCorrectEl(correct, previousAnswer) {
+			if (correct === undefined) {
+				return h2('p.answer-correct-status');
+			} else {
+				var _correctClasses, _correctTexts;
+	
+				var correctClasses = (_correctClasses = {}, _defineProperty(_correctClasses, correctStates.CORRECT, 'good'), _defineProperty(_correctClasses, correctStates.PARTLY, 'semi'), _defineProperty(_correctClasses, correctStates.INCORRECT, 'bad'), _correctClasses);
+				var correctTexts = (_correctTexts = {}, _defineProperty(_correctTexts, correctStates.CORRECT, 'Oikein!'), _defineProperty(_correctTexts, correctStates.PARTLY, 'Melkein! Oikea vataus oli ' + previousAnswer), _defineProperty(_correctTexts, correctStates.INCORRECT, 'Väärin! Oikea vataus oli ' + previousAnswer), _correctTexts);
+	
+				return h2('p.answer-correct-status.' + correctClasses[correct], correctTexts[correct]);
+			}
+		}
+	
 		function getGame(props) {
-			return [(0, _dom.h)('div', [props.image ? h2('img.question-image', { src: props.image.url }) : 'Lisää kuvia setup-välilehdeltä']), h2('h2.question', ['Mikä on kuvassa?']), props.correct !== undefined ? h2('p.answer-correct-status.' + (props.correct ? 'good' : 'bad'), [props.correct ? 'Oikein!' : 'Väärin! Oikea vastaus oli ' + props.previousImage.answer + '.']) : (0, _dom.h)('p.answer-correct-status'), h2('input#answer', { autofocus: true })];
+			return [(0, _dom.h)('div', [getImageEl(props)]), h2('h2.question', ['Mikä on kuvassa?']), getCorrectEl(props.correct, props.previousImage ? props.previousImage.answer : undefined), h2('input#answer', { autofocus: true })];
 		}
 	
 		var tabProps$ = state$.combineLatest(setupPanel.DOM, function (props, setupVTree) {
@@ -18920,7 +18984,7 @@
 /***/ function(module, exports) {
 
 	// removed by extract-text-webpack-plugin
-	module.exports = {"app":"app__app___2x3cr","question-image":"app__question-image___2IVTb","question":"app__question___kR7cQ","answer-correct-status":"app__answer-correct-status___19SU5","good":"app__good___1e4rt","bad":"app__bad___33LSF","images":"app__images___3TbdM","tabs":"app__tabs___334fL","active":"app__active___1hacu","drop-target":"app__drop-target___1ygzY","image-list":"app__image-list___1wFYN"};
+	module.exports = {"app":"app__app___2x3cr","question-image":"app__question-image___2IVTb","question":"app__question___kR7cQ","answer-correct-status":"app__answer-correct-status___19SU5","good":"app__good___1e4rt","bad":"app__bad___33LSF","semi":"app__semi___1IPCS","images":"app__images___3TbdM","game-over":"app__game-over___3sFiX","tabs":"app__tabs___334fL","active":"app__active___1hacu","drop-target":"app__drop-target___1ygzY","image-list":"app__image-list___1wFYN"};
 
 /***/ },
 /* 122 */

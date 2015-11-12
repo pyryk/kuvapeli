@@ -8,9 +8,16 @@
 .app__app___2x3cr .app__answer-correct-status___19SU5.app__bad___33LSF {
     color: red;
 }
+.app__app___2x3cr .app__answer-correct-status___19SU5.app__semi___1IPCS {
+    color: olive;
+}
 .app__app___2x3cr .app__images___3TbdM {
     width: 600px;
     height: 300px;
+}
+.app__app___2x3cr .app__game-over___3sFiX {
+    margin: 1em 0;
+    font-size: 1.2em;
 }
 .app__app___2x3cr .app__tabs___334fL > div {
     cursor: pointer;
