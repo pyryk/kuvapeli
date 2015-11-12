@@ -16,11 +16,20 @@
 		&.bad {
 			color: red;
 		}
+
+		&.semi {
+			color: olive;
+		}
 	}
 
 	.images {
 		width: 600px;
 		height: 300px;
+	}
+
+	.game-over {
+		margin: 1em 0;
+		font-size: 1.2em;
 	}
 
 	.tabs {

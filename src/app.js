@@ -9,6 +9,12 @@ import ss from 'seededshuffle';
 
 const h2 = vdomCss(styles);
 
+const correctStates = {
+	CORRECT: 'CORRECT',
+	PARTLY: 'PARTLY',
+	INCORRECT: 'INCORRECT'
+};
+
 const debug = (label) => (...args) => console.log(...[label].concat(args));
 
 // NOTE this is a quick workaround for a bug which causes image$ and
@@ -25,7 +31,6 @@ function main({ DOM }) {
 		.map(ev => ev.target.value)
 		.startWith('');
 
-	console.log(DOM.select('#answer'));
 	const submit$ = DOM.select('#answer').events('keyup')
 		.map(ev => ev.keyCode)
 		.filter(code => code === 13)
@@ -35,27 +40,59 @@ function main({ DOM }) {
 	const image$ = submit$
 		.do(debug('submit'))
 		.map((code, i) => i)
-		.combineLatest(shuffledImages$, (count, images) => { console.log('current images', images); return images[count % images.length]; })
+		.combineLatest(shuffledImages$, (count, images) => {
+			if (count < images.length || images.length === 0) {
+				return images[count];
+			} else {
+				return { done: true, answer: '', url: '' };
+			}
+		})
 		.startWith(undefined);
 
 	const previousImage$ = image$
 		.pairwise()
-		.map(([previous]) => previous)
-		.do(debug('previousImage'));
+		.map(([previous]) => previous);
 
 	const correctAnswer$ = previousImage$
 		.withLatestFrom(
 			inputValue$,
-			(image, value) => image ? image.answer.normalize() === value.normalize() : undefined
+			(image, value) => {
+				if (image) {
+					const imageNormalized = image.answer.normalize();
+					const valueNormalized = value.normalize();
+					if (imageNormalized === valueNormalized) {
+						return correctStates.CORRECT;
+					} else if (imageNormalized.indexOf(valueNormalized) > -1 || valueNormalized.indexOf(imageNormalized) > -1) {
+						return correctStates.PARTLY;
+					} else {
+						return correctStates.INCORRECT;
+					}
+				} else {
+					return undefined;
+				}
+			}
 		);
+
+	const stats$ = correctAnswer$
+		.filter(value => value !== undefined)
+		.do(debug('stats filter'))
+		.scan((memo, value) => { console.log(memo, value); return memo.concat(value); }, [])
+		.do(debug('stats scan'))
+		.startWith([])
+		.do(debug('stats values'))
+		.map(values => ({
+			correct: values.filter(v => v === correctStates.CORRECT).length,
+			partly: values.filter(v => v === correctStates.PARTLY).length,
+			total: values.length }));
 
 	const state$ = Rx.Observable.combineLatest(
 		inputValue$,
 		image$,
 		previousImage$,
-		correctAnswer$
-	).map(([value, image, previousImage, correct]) => {
-		return { value, image, previousImage, correct };
+		correctAnswer$,
+		stats$
+	).map(([value, image, previousImage, correct, stats]) => {
+		return { value, image, previousImage, correct, stats };
 	});
 
 	// TODO extract actual game
@@ -69,16 +106,44 @@ function main({ DOM }) {
 		];
 	}
 
+	function getImageEl(props) {
+		if (props.image) {
+			if (props.image.done) {
+				return h2('div.game-over', `Peli ohi! Sait oikein ${props.stats.correct} ${props.stats.partly > 0 ? `( + ${props.stats.partly})` : ''} / ${props.stats.total} kuvaa.`);
+			} else {
+				return h2('img.question-image', { src: props.image.url });
+			}
+		} else {
+			return 'Lisää kuvia setup-välilehdeltä';
+		}
+	}
+
+	function getCorrectEl(correct, previousAnswer) {
+		if (correct === undefined) {
+			return h2(`p.answer-correct-status`);
+		} else {
+			const correctClasses = {
+				[correctStates.CORRECT]: 'good',
+				[correctStates.PARTLY]: 'semi',
+				[correctStates.INCORRECT]: 'bad'
+			};
+			const correctTexts = {
+				[correctStates.CORRECT]: 'Oikein!',
+				[correctStates.PARTLY]: `Melkein! Oikea vataus oli ${previousAnswer}`,
+				[correctStates.INCORRECT]: `Väärin! Oikea vataus oli ${previousAnswer}`
+			};
+
+			return h2(`p.answer-correct-status.${correctClasses[correct]}`, correctTexts[correct]);
+		}
+	}
+
 	function getGame(props) {
 		return [
 			h('div', [
-				props.image ? h2('img.question-image', { src: props.image.url }) : 'Lisää kuvia setup-välilehdeltä'
+				getImageEl(props)
 			]),
 			h2('h2.question', ['Mikä on kuvassa?']),
-			props.correct !== undefined ?
-				h2(`p.answer-correct-status.${props.correct ? 'good' : 'bad'}`,
-					[props.correct ? 'Oikein!' : `Väärin! Oikea vastaus oli ${props.previousImage.answer}.`]) :
-				h(`p.answer-correct-status`),
+			getCorrectEl(props.correct, props.previousImage ? props.previousImage.answer : undefined),
 			h2('input#answer', { autofocus: true })
 		];
 	}
