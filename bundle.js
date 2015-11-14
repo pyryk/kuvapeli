@@ -34,7 +34,7 @@
 /******/ 	__webpack_require__.c = installedModules;
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/bin/";
+/******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
@@ -81,11 +81,17 @@
 	
 	var _seededshuffle2 = _interopRequireDefault(_seededshuffle);
 	
+	var _cache = __webpack_require__(127);
+	
+	var _cache2 = _interopRequireDefault(_cache);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+	
+	_cache2.default.init('bin/service-worker.js');
 	
 	var h2 = (0, _cssModulesVdom2.default)(_app2.default);
 	
@@ -19337,6 +19343,44 @@
 	   })());
 	})(( true?function(fn){module.exports=fn;}:function(fn){this['SeededShuffle']=fn;}));
 
+
+/***/ },
+/* 127 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _cacheSw = __webpack_require__(128);
+	
+	var _cacheSw2 = _interopRequireDefault(_cacheSw);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function init() {
+		if ('serviceWorker' in navigator) {
+			(0, _cacheSw2.default)({ scope: '/' }).then(function (registration) {
+				console.log('serviceworker succeeded', registration);
+			}).catch(function (error) {
+				console.log('serviceworker failed: ' + error);
+			});
+		} else {
+			console.log('no serviceworker support!');
+		}
+	}
+	
+	module.exports = {
+		init: init
+	};
+
+/***/ },
+/* 128 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	module.exports = function (options) {
+		return navigator.serviceWorker.register(__webpack_require__.p + "6817fdffb994647c486b.serviceworker.js", options);
+	};
 
 /***/ }
 /******/ ]);
