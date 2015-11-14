@@ -19358,7 +19358,7 @@
 	
 	function init() {
 		if ('serviceWorker' in navigator) {
-			(0, _cacheSw2.default)({ scope: '/' }).then(function (registration) {
+			(0, _cacheSw2.default)({ scope: './' }).then(function (registration) {
 				console.log('serviceworker succeeded', registration);
 			}).catch(function (error) {
 				console.log('serviceworker failed: ' + error);
