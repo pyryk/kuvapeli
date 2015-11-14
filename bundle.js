@@ -34,7 +34,7 @@
 /******/ 	__webpack_require__.c = installedModules;
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/";
+/******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
@@ -19379,7 +19379,7 @@
 	"use strict";
 	
 	module.exports = function (options) {
-		return navigator.serviceWorker.register(__webpack_require__.p + "6817fdffb994647c486b.serviceworker.js", options);
+		return navigator.serviceWorker.register(__webpack_require__.p + "a73d3b69caaa00b515de.serviceworker.js", options);
 	};
 
 /***/ }
