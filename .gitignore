@@ -1,3 +1,4 @@
 node_modules/
-bin/
+bin/bundle.js
+bin/style.css
 dist/

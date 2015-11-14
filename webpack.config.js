@@ -1,5 +1,13 @@
+var webpack = require("webpack");
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var path = require("path");
+
+var env = process.env.NODE_ENV;
+var prod = env && env.toLowerCase() === 'prod';
+
+var prodPlugins = [
+    new webpack.optimize.UglifyJsPlugin({ minimize: true })
+]
 
 module.exports = {
     cache: true,
@@ -9,8 +17,7 @@ module.exports = {
         app: ["./src/app.js"]
     },
     output: {
-        path: path.resolve(__dirname, "bin"),
-        publicPath: "/bin/",
+        path: __dirname,
         filename: "bundle.js"
     },
     module: {
@@ -19,7 +26,8 @@ module.exports = {
         ],
         loaders: [
             { test: /\.js$/, exclude: /node_modules/, loader: "babel", query: {cacheDirectory: true, presets: ['es2015']}},
-            { test: /\.css$/, loader: ExtractTextPlugin.extract('style-loader', 'css-loader?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader') }
+            { test: /\.css$/, loader: ExtractTextPlugin.extract('style-loader', 'css-loader?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader') },
+            { test: /\.sw.js$/, loader: "serviceworker"}
         ]
     },
     postcss: [
@@ -28,6 +36,6 @@ module.exports = {
         require('postcss-nested')
     ],
     plugins: [
-        new ExtractTextPlugin('style.css', { allChunks: true })
-    ]
+        new ExtractTextPlugin('style.css', { allChunks: true }),
+    ].concat(prod ? prodPlugins : [])
 };

@@ -6,6 +6,9 @@ import { tabs } from './tabs';
 import { setup } from './setup';
 import vdomCss from './css-modules-vdom';
 import ss from 'seededshuffle';
+import cache from './cache';
+
+cache.init('bin/service-worker.js');
 
 const h2 = vdomCss(styles);
 
