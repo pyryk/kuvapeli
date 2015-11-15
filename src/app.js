@@ -52,6 +52,8 @@ function main({ DOM }) {
 		})
 		.startWith(undefined);
 
+	const hintPanel = hint({ DOM, props: { image$ } });
+
 	const previousImage$ = image$
 		.pairwise()
 		.map(([previous]) => previous);
@@ -99,13 +101,13 @@ function main({ DOM }) {
 	});
 
 	// TODO extract actual game
-	function tabChildren(props, setupDOM) {
+	function tabChildren(props, setupDOM, hintDOM) {
 		console.log('props', props);
 		return [
 			h('div', [
 				setupDOM
 			]),
-			h('div', getGame(props))
+			h('div', getGame(props, hintDOM))
 		];
 	}
 
@@ -140,19 +142,20 @@ function main({ DOM }) {
 		}
 	}
 
-	function getGame(props) {
+	function getGame(props, hintDOM) {
 		return [
 			h('div', [
 				getImageEl(props)
 			]),
 			h2('h2.question', ['Mikä on kuvassa?']),
 			getCorrectEl(props.correct, props.previousImage ? props.previousImage.answer : undefined),
+			hintDOM,
 			h2('input#answer', { autofocus: true })
 		];
 	}
 
-	const tabProps$ = state$.combineLatest(setupPanel.DOM,
-		(props, setupVTree) => ({ default: 'tab1', children: tabChildren(props, setupVTree) }));
+	const tabProps$ = state$.combineLatest(setupPanel.DOM, hintPanel.DOM,
+		(props, setupVTree, hintVTree) => ({ default: 'tab1', children: tabChildren(props, setupVTree, hintVTree) }));
 	const tabPanel = tabs({ DOM, props$: tabProps$ });
 
 	return {
