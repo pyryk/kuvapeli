@@ -8,7 +8,7 @@ import vdomCss from './css-modules-vdom';
 import ss from 'seededshuffle';
 import cache from './cache';
 
-cache.init('bin/service-worker.js');
+cache.init();
 
 const h2 = vdomCss(styles);
 
