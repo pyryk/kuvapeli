@@ -42,6 +42,7 @@ export function hint({ DOM, props }) {
 	});
 
 	return {
-		DOM: vtree$
+		DOM: vtree$,
+		showing$: show$
 	};
 }

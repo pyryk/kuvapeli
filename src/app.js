@@ -7,6 +7,7 @@ import { setup } from './setup';
 import vdomCss from './css-modules-vdom';
 import ss from 'seededshuffle';
 import cache from './cache';
+import { hint } from './hint';
 
 cache.init();
 
@@ -14,6 +15,7 @@ const h2 = vdomCss(styles);
 
 const correctStates = {
 	CORRECT: 'CORRECT',
+	WITH_HINT: 'WITH_HINT',
 	PARTLY: 'PARTLY',
 	INCORRECT: 'INCORRECT'
 };
@@ -61,12 +63,13 @@ function main({ DOM }) {
 	const correctAnswer$ = previousImage$
 		.withLatestFrom(
 			inputValue$,
-			(image, value) => {
+			hintPanel.showing$,
+			(image, value, hintShowing) => {
 				if (image) {
 					const imageNormalized = image.answer.normalize();
 					const valueNormalized = value.normalize();
 					if (imageNormalized === valueNormalized) {
-						return correctStates.CORRECT;
+						return hintShowing ? correctStates.WITH_HINT : correctStates.CORRECT;
 					} else if (imageNormalized.indexOf(valueNormalized) > -1 || valueNormalized.indexOf(imageNormalized) > -1) {
 						return correctStates.PARTLY;
 					} else {
@@ -88,6 +91,7 @@ function main({ DOM }) {
 		.map(values => ({
 			correct: values.filter(v => v === correctStates.CORRECT).length,
 			partly: values.filter(v => v === correctStates.PARTLY).length,
+			withHint: values.filter(v => v === correctStates.WITH_HINT).length,
 			total: values.length }));
 
 	const state$ = Rx.Observable.combineLatest(
@@ -111,10 +115,39 @@ function main({ DOM }) {
 		];
 	}
 
+	function getStatsEl(stats) {
+		return h(`div.stats`, [
+			h('h3', 'Tulokset'),
+			h('table', [
+				h('tbody', [
+					h('tr', [
+						h('th', 'Oikein'),
+						h('td', `${stats.correct} / ${stats.total}`)
+					]),
+					h('tr', [
+						h('th', 'Vihjeen jälkeen'),
+						h('td', `${stats.withHint} / ${stats.total}`)
+					]),
+					h('tr', [
+						h('th', 'Melkein oikein'),
+						h('td', `${stats.partly} / ${stats.total}`)
+					]),
+					h('tr', [
+						h('th', 'Yhteensä'),
+						h('td', `${stats.correct + stats.partly + stats.withHint} / ${stats.total}`)
+					])
+				])
+			])
+		]);
+	}
+
 	function getImageEl(props) {
 		if (props.image) {
 			if (props.image.done) {
-				return h2('div.game-over', `Peli ohi! Sait oikein ${props.stats.correct} ${props.stats.partly > 0 ? `( + ${props.stats.partly})` : ''} / ${props.stats.total} kuvaa.`);
+				return h2('div.game-over', [
+					h('p', `Peli ohi!`),
+					getStatsEl(props.stats)
+				]);
 			} else {
 				return h2('img.question-image', { src: props.image.url });
 			}
@@ -129,11 +162,13 @@ function main({ DOM }) {
 		} else {
 			const correctClasses = {
 				[correctStates.CORRECT]: 'good',
+				[correctStates.WITH_HINT]: 'good',
 				[correctStates.PARTLY]: 'semi',
 				[correctStates.INCORRECT]: 'bad'
 			};
 			const correctTexts = {
 				[correctStates.CORRECT]: 'Oikein!',
+				[correctStates.WITH_HINT]: '(Vihjeen jälkeen) oikein!',
 				[correctStates.PARTLY]: `Melkein! Oikea vataus oli ${previousAnswer}`,
 				[correctStates.INCORRECT]: `Väärin! Oikea vataus oli ${previousAnswer}`
 			};
