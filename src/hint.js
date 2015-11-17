@@ -34,7 +34,7 @@ export function hint({ DOM, props }) {
 				value ? [
 					'Vihje: ',
 					span(`.actual-hint.${styles['actual-hint']}`, `${generateHint(image.answer)}`)
-				] : 'Vihje tulee tähän'
+				] : ''
 			),
 			value ? null : button(`.hint-display.${styles['hint-display']}`, 'Näytä vihje')
 		]
