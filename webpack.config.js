@@ -10,7 +10,7 @@ var prodPlugins = [
 ]
 
 var definePlugin = new webpack.DefinePlugin({
-  __PROD__: process.env.NODE_ENV === 'production'
+  __PROD__: prod
 });
 
 module.exports = {

@@ -10,7 +10,7 @@
     "clean": "rm -rf bundle.js || echo ''; rm -rf style.css || echo ''; rm -rf dist || echo ''",
     "build": "npm run clean && webpack",
     "postbuild": "mkdir -p dist && rm -rf dist/* && cp index.html dist && mv bundle.js* dist/ && mv style.css* dist/ && mv *.serviceworker.js* dist/",
-    "predeploy": "npm run build",
+    "predeploy": "NODE_ENV=prod npm run build",
     "deploy": "node deploy.js",
     "postdeploy": "npm run clean"
   },
