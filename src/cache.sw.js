@@ -5,10 +5,6 @@ self.addEventListener('fetch', function(event) {
 	event.respondWith(
 		caches.match(event.request)
 			.then(function(cachedResponse) {
-				// Cache hit - return response
-				if (cachedResponse) {
-					return cachedResponse;
-				}
 
 				// IMPORTANT: Clone the request. A request is a stream and
 				// can only be consumed once. Since we are consuming this
@@ -16,7 +12,7 @@ self.addEventListener('fetch', function(event) {
 				// to clone the response
 				const fetchRequest = event.request.clone();
 
-				return fetch(fetchRequest).then(
+				const fetchResponse = fetch(fetchRequest).then(
 					function(response) {
 						// Check if we received a valid response
 						if (!response || response.status !== 200 || response.type !== 'basic') {
@@ -29,9 +25,7 @@ self.addEventListener('fetch', function(event) {
 						// to clone it so we have 2 stream.
 						const responseToCache = response.clone();
 
-						/*eslint-disable no-undef */
 						caches.open(CACHE_NAME)
-						/*eslint-enable no-undef */
 							.then(function(cache) {
 								cache.put(event.request, responseToCache);
 							});
@@ -39,7 +33,28 @@ self.addEventListener('fetch', function(event) {
 						return response;
 					}
 				);
+
+				if (cachedResponse) {
+					return cachedResponse;
+				} else {
+					return fetchResponse;
+				}
 			})
 		);
+});
+
+self.addEventListener('install', function() {
+	console.log('serviceworker install');
+});
+
+self.addEventListener('activate', function(event) {
+	console.log('serviceworker activate');
+	event.waitUntil(
+		caches.keys().then(function(keyList) {
+			return Promise.all(keyList.map(function(key, i) {
+				return caches.delete(keyList[i]);
+			}));
+		})
+	);
 });
 /*eslint-enable max-nested-callbacks */
