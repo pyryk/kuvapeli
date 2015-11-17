@@ -9,7 +9,9 @@ import ss from 'seededshuffle';
 import cache from './cache';
 import { hint } from './hint';
 
-cache.init();
+if (__PROD__) {
+	cache.init();
+}
 
 const h2 = vdomCss(styles);
 

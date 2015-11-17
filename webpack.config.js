@@ -9,6 +9,10 @@ var prodPlugins = [
     new webpack.optimize.UglifyJsPlugin({ minimize: true })
 ]
 
+var definePlugin = new webpack.DefinePlugin({
+  __PROD__: process.env.NODE_ENV === 'production'
+});
+
 module.exports = {
     cache: true,
     debug: true,
@@ -36,6 +40,7 @@ module.exports = {
         require('postcss-nested')
     ],
     plugins: [
+        definePlugin,
         new ExtractTextPlugin('style.css', { allChunks: true }),
     ].concat(prod ? prodPlugins : [])
 };

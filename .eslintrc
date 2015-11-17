@@ -5,6 +5,9 @@
     	"browser": true,
     	"es6": true
     },
+    "globals": {
+        "__PROD__": true
+    },
     "ecmaFeatures": {
         "modules": true,
         "arrowFunctions": true,
