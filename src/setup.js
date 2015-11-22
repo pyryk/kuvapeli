@@ -4,7 +4,7 @@ import styles from './app.css';
 //import vdCss  from './css-modules-vdom';
 import hh from 'hyperscript-helpers';
 
-const { div, h2, textarea, img, a, ul, li } = hh(h);
+const { div, h2, textarea, img, a, ol, ul, li } = hh(h);
 
 //const h2 = vdCss(styles);
 
@@ -72,6 +72,11 @@ export function setup({ DOM }) {
 		div(`.setup`, [
 			h2('.label', [
 				'Kuvat'
+			]),
+			ol(`.instructions`, [
+				li('.instructions-entry', 'Nimeä kuvat siten, että tiedostonimi on haluamasi vastaus (esim. jos kuvan oikea vastaus on "hauki", muuta tiedoston nimeksi hauki.jpg)'),
+				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon'),
+				li('.instructions-entry', 'Paina yläpuolelta Peli-nappia')
 			]),
 			div(`.${styles['drop-target']}.drop-target`, ['Raahaa tiedostot tähän ', showFiles(dropped)]),
 			div(`.${styles['image-list']}.image-list`, value.map(image => img({ src: image.url, title: image.answer }))),
