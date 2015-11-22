@@ -5,7 +5,7 @@ import _ from 'lodash';
 
 const { div, span, button } = hh(h);
 
-const generateHint = (answer) => _.map(answer, (char, i) => {
+const generateHint = (answer) => _.map(answer.normalize(), (char, i) => {
 	if (i === 0) {
 		return char;
 	} else if (char === ' ') { // TODO regex with all relevant letters?
