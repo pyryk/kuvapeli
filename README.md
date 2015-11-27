@@ -2,6 +2,10 @@
 
 A simple image-based quiz. Work in progress.
 
+# Demo
+
+See [https://pyryk.github.io/kuvapeli](https://pyryk.github.io/kuvapeli).
+
 # Installation
 
 Only dev mode available.
