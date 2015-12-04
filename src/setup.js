@@ -1,13 +1,10 @@
 import Rx from 'rx';
 import { h } from '@cycle/dom';
 import styles from './app.css';
-//import vdCss  from './css-modules-vdom';
 import hh from 'hyperscript-helpers';
 import { preview } from './preview';
 
-const { div, h2, ol, ul, li } = hh(h);
-
-//const h2 = vdCss(styles);
+const { div, h2, h3, ol, ul, li, p } = hh(h);
 
 function generateAnswer(url, isUrlEncoded = true) {
 	const nameStart = url.lastIndexOf('/') === -1 ? 0 : (url.lastIndexOf('/') + 1);
@@ -74,6 +71,8 @@ export function setup({ DOM }) {
 			h2('.label', [
 				'Lisää kuvat'
 			]),
+			p('.instructions', 'Toistaiseksi kuvapeli toimii ainoastaan käyttäjän omilla tiedostoilla.'),
+			h3('Ohjeet'),
 			ol(`.instructions`, [
 				li('.instructions-entry', 'Nimeä kuvat siten, että tiedostonimi on haluamasi vastaus (esim. jos kuvan oikea vastaus on "hauki", muuta tiedoston nimeksi hauki.jpg)'),
 				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon'),
