@@ -18,7 +18,7 @@ export function tabs({ DOM, props$ }) {
 		.combineLatest(props$, value$, (props, value) =>
 			h(`div.tabs-container`, [
 				h('div.container', value === 'tab1' ? props.children[0] : props.children[1]),
-				value === 'tab1' ? h2(`button.to-game.tab2`, { disabled: !props.showNextButton }, ['Peli »']) : null
+				value === 'tab1' ? h2(`button.to-game.tab2`, { disabled: !props.showNextButton }, ['Aloita peli »']) : null
 			])
 		);
 

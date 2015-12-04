@@ -85,7 +85,7 @@ export function setup({ DOM }) {
 			ol(`.instructions`, [
 				li('.instructions-entry', 'Nimeä kuvat siten, että tiedostonimi on haluamasi vastaus (esim. jos kuvan oikea vastaus on "hauki", muuta tiedoston nimeksi hauki.jpg)'),
 				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon. Voit tarkistaa, että kuva ja siihen liittyvä vastaus ovat oikein viemällä hiiren vastauksen päälle.'),
-				li('.instructions-entry', 'Paina alhaalta Peli-nappia')
+				li('.instructions-entry', 'Paina alhaalta Aloita peli -napilla')
 			]),
 			div(`.${styles['drop-target']}.drop-target`, ['Raahaa kuvatiedostot tähän ', showFiles(dropped, showAll ? 0 : MAX_IMAGES_SHOWN)])
 		])
