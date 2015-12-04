@@ -27,6 +27,16 @@
 		height: 300px;
 	}
 
+	.show-all {
+		cursor: pointer;
+		color: #777;
+		text-decoration: underline;
+
+		&:hover {
+			color: #666;
+		}
+	}
+
 	.game-over {
 		margin: 1em 0;
 		font-size: 1.2em;

@@ -3,8 +3,11 @@ import { h } from '@cycle/dom';
 import styles from './app.css';
 import hh from 'hyperscript-helpers';
 import { preview } from './preview';
+import _ from 'lodash';
 
 const { div, h2, h3, ol, ul, li, p } = hh(h);
+
+const MAX_IMAGES_SHOWN = 10;
 
 function generateAnswer(url, isUrlEncoded = true) {
 	const nameStart = url.lastIndexOf('/') === -1 ? 0 : (url.lastIndexOf('/') + 1);
@@ -54,19 +57,25 @@ export function setup({ DOM }) {
 		.combineLatest(dropped$, (written, dropped) => written.concat(dropped))
 		.do((...args) => console.log('setup images', ...args));
 
-	const showFiles = (images) => {
+	const showAll$ = DOM.select('.show-all').events('click')
+		.map(() => true)
+		.startWith(false);
+
+	const showFiles = (images, maxCount) => {
 		if (images && images.length > 0) {
+			const imagesShown = maxCount ? _.take(images, maxCount) : images;
+			const hiddenCount = images.length - imagesShown.length;
 			return ul(
-				images.map((image, i) => li([
+				imagesShown.map((image, i) => li([
 					preview({ DOM, props: { image$: Rx.Observable.just(image) }, i }).DOM
-				]))
+				])).concat(hiddenCount > 0 ? li(`.show-all.${styles['show-all']}`, `${hiddenCount} kuvaa piilotettu – näytä loput`) : null)
 			);
 		} else {
 			return '';
 		}
 	};
 
-	const vtree$ = Rx.Observable.combineLatest(value$, written$, dropped$, dragEnter$, dragOver$, (value, written, dropped) =>
+	const vtree$ = Rx.Observable.combineLatest(value$, written$, dropped$, showAll$, dragEnter$, dragOver$, (value, written, dropped, showAll) =>
 		div(`.setup`, [
 			h2('.label', [
 				'Lisää kuvat'
@@ -75,10 +84,10 @@ export function setup({ DOM }) {
 			h3('Ohjeet'),
 			ol(`.instructions`, [
 				li('.instructions-entry', 'Nimeä kuvat siten, että tiedostonimi on haluamasi vastaus (esim. jos kuvan oikea vastaus on "hauki", muuta tiedoston nimeksi hauki.jpg)'),
-				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon'),
-				li('.instructions-entry', 'Paina yläpuolelta Peli-nappia')
+				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon. Voit tarkistaa, että kuva ja siihen liittyvä vastaus ovat oikein viemällä hiiren vastauksen päälle.'),
+				li('.instructions-entry', 'Paina alhaalta Peli-nappia')
 			]),
-			div(`.${styles['drop-target']}.drop-target`, ['Raahaa kuvatiedostot tähän ', showFiles(dropped)])
+			div(`.${styles['drop-target']}.drop-target`, ['Raahaa kuvatiedostot tähän ', showFiles(dropped, showAll ? 0 : MAX_IMAGES_SHOWN)])
 		])
 	);
 
