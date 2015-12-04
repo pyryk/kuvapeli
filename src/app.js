@@ -171,7 +171,7 @@ function main({ DOM }) {
 			const correctTexts = {
 				[correctStates.CORRECT]: 'Oikein!',
 				[correctStates.WITH_HINT]: '(Vihjeen jälkeen) oikein!',
-				[correctStates.PARTLY]: `Melkein! Oikea vataus oli ${previousAnswer}`,
+				[correctStates.PARTLY]: `Melkein! Oikea vastaus oli ${previousAnswer}`,
 				[correctStates.INCORRECT]: `Väärin! Oikea vataus oli ${previousAnswer}`
 			};
 
@@ -192,7 +192,11 @@ function main({ DOM }) {
 	}
 
 	const tabProps$ = state$.combineLatest(setupPanel.DOM, hintPanel.DOM,
-		(props, setupVTree, hintVTree) => ({ default: 'tab1', children: tabChildren(props, setupVTree, hintVTree) }));
+		(props, setupVTree, hintVTree) => ({
+			default: 'tab1',
+			showNextButton: !!props.image,
+			children: tabChildren(props, setupVTree, hintVTree)
+		}));
 	const tabPanel = tabs({ DOM, props$: tabProps$ });
 
 	return {

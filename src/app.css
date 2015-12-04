@@ -32,6 +32,23 @@
 		font-size: 1.2em;
 	}
 
+	.to-game {
+		border: 1px solid #ccc;
+		display: inline-block;
+		padding: 2px 5px;
+		background: #eee;
+
+		&:disabled {
+			opacity: 0.5;
+		}
+
+		&:hover:not(:disabled) {
+			background: #ddd;
+			cursor: pointer;
+			color: #333;
+		}
+	}
+
 	.tabs {
 
 

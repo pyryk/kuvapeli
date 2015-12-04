@@ -17,15 +17,8 @@ export function tabs({ DOM, props$ }) {
 	const vtree$ = Rx.Observable
 		.combineLatest(props$, value$, (props, value) =>
 			h(`div.tabs-container`, [
-				h2('div.tabs', [
-					h2(`div.tab1${value === 'tab1' ? '.active' : ''}`,
-						['Setup']
-					),
-					h2(`div.tab2${value === 'tab2' ? '.active' : ''}`,
-						['Peli']
-					)
-				]),
-				h('div.container', value === 'tab1' ? props.children[0] : props.children[1])
+				h('div.container', value === 'tab1' ? props.children[0] : props.children[1]),
+				value === 'tab1' ? h2(`button.to-game.tab2`, { disabled: !props.showNextButton }, ['Peli »']) : null
 			])
 		);
 

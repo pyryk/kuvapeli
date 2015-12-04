@@ -3,8 +3,9 @@ import { h } from '@cycle/dom';
 import styles from './app.css';
 //import vdCss  from './css-modules-vdom';
 import hh from 'hyperscript-helpers';
+import { preview } from './preview';
 
-const { div, h2, textarea, img, a, ol, ul, li } = hh(h);
+const { div, h2, ol, ul, li } = hh(h);
 
 //const h2 = vdCss(styles);
 
@@ -59,8 +60,8 @@ export function setup({ DOM }) {
 	const showFiles = (images) => {
 		if (images && images.length > 0) {
 			return ul(
-				images.map(image => li([
-					a({ href: image.url, target: '_blank' }, image.answer)
+				images.map((image, i) => li([
+					preview({ DOM, props: { image$: Rx.Observable.just(image) }, i }).DOM
 				]))
 			);
 		} else {
@@ -71,19 +72,14 @@ export function setup({ DOM }) {
 	const vtree$ = Rx.Observable.combineLatest(value$, written$, dropped$, dragEnter$, dragOver$, (value, written, dropped) =>
 		div(`.setup`, [
 			h2('.label', [
-				'Kuvat'
+				'Lisää kuvat'
 			]),
 			ol(`.instructions`, [
 				li('.instructions-entry', 'Nimeä kuvat siten, että tiedostonimi on haluamasi vastaus (esim. jos kuvan oikea vastaus on "hauki", muuta tiedoston nimeksi hauki.jpg)'),
 				li('.instructions-entry', 'Raahaa kaikki haluamasi kuvat alla olevaan laatikkoon'),
 				li('.instructions-entry', 'Paina yläpuolelta Peli-nappia')
 			]),
-			div(`.${styles['drop-target']}.drop-target`, ['Raahaa tiedostot tähän ', showFiles(dropped)]),
-			div(`.${styles['image-list']}.image-list`, value.map(image => img({ src: image.url, title: image.answer }))),
-			div('.textarea-hint', 'Tai syötä kuvien URL:t alle'),
-			textarea(`.${styles.images}`, {
-				value: written.map(v => v.url).join('\n')
-			})
+			div(`.${styles['drop-target']}.drop-target`, ['Raahaa kuvatiedostot tähän ', showFiles(dropped)])
 		])
 	);
 

@@ -1,0 +1,28 @@
+.preview-image {
+	max-width: 400px;
+	max-height: 300px;
+	position: absolute;
+	padding: 3px;
+	border: 1px solid #666;
+	background: white;
+}
+
+
+.preview-trigger .preview-image-container {
+	position: relative;
+	display: none;
+}
+
+.preview-trigger:hover .preview-image-container {
+	display: inline-block;
+}
+
+.preview-trigger {
+	cursor: pointer;
+	color: #666;
+
+	&:hover {
+		color: #777;
+		text-decoration: underline;
+	}
+}
